@@ -3,13 +3,13 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from core.settings import settings
 
-SQLite_test = 'sqlite:///./vacancies.db'
 
 Base = declarative_base()
 
 engine = create_engine(
-    SQLite_test,
+    settings.database_url,
     echo=True,
 )
 

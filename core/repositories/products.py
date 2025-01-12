@@ -1,51 +1,39 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from core.models import Products, Seller
+from core.models import OlxData
 from core.repositories.postgres_base import get_db_session
-from core.schemas.products import ProductBase, SellerBase
+from core.schemas.products import OlxDataBase
 
 
-class ProductsRepository:
+class OlxDataRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def get_seller_by_name(self, name: str) -> Seller | None:
-        return self.session.query(Seller).filter_by(name=name).first()
+    def get_product_by_product_id(self, product_id: str) -> OlxData | None:
+        return self.session.query(OlxData).filter_by(product_id=product_id).first()
 
-    def save_seller(self, seller_data: SellerBase) -> Seller:
-        seller = Seller(**seller_data.model_dump())
+    def save_product(self, product_data: OlxDataBase) -> None:
+        existing_product = self.get_product_by_product_id(product_id=product_data.product_id)
 
-        try:
-            self.session.add(seller)
-            self.session.commit()
-            return seller
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            raise ValueError(f'Error saving seller: {str(e)}')
+        if existing_product:
+            for key, value in product_data.model_dump(exclude_unset=True).items():
+                setattr(existing_product, key, value)
+        else:
+            product_dict = product_data.model_dump()
+            product = OlxData(**product_dict)
 
-    def save_product(self, product_data: ProductBase, seller_name: str) -> None:
-        seller = self.get_seller_by_name(name=seller_name)
+            try:
+                self.session.add(product)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                self.session.rollback()
+                raise ValueError(f'Error saving product: {str(e)}')
 
-        if not seller:
-            self.save_seller(product_data.seller)
-
-        product_dict = product_data.model_dump()
-        product_dict['seller_id'] = seller.id
-        product = Products(**product_dict)
-
-        try:
-            self.session.add(product)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            raise ValueError(f'Error saving product: {str(e)}')
-
-    def add_product(self, product_data: ProductBase) -> None:
-        seller_name = product_data.seller.name
-        self.save_product(product_data=product_data, seller_name=seller_name)
+    def add_product(self, product_data: OlxDataBase) -> None:
+        self.save_product(product_data)
 
 
-def get_products_repository() -> ProductsRepository:
+def get_olx_data_repository() -> OlxDataRepository:
     with get_db_session() as session:
-        return ProductsRepository(session=session)
+        return OlxDataRepository(session=session)

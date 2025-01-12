@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         return (
-            f'postgresql//'
+            f'postgresql://'
             f'{self.postgres_user}:'
             f'{self.postgres_password}@'
             f'{self.postgres_host}:{self.postgres_port}/'

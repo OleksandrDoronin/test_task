@@ -1,22 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class SellerBase(BaseModel):
-    name: str
-    rating: str | None = None
-    registration_date: str
-    last_login: str
-    phone_number: str | None = None
+class OlxDataBase(BaseModel):
+    id: int | None = None
+    seller_name: str | None = None
+    registration_date: str | None = None
+    last_login: str | None
+    url: str | None = None
+    title: str | None = None
+    image_urls: list[str] | None = None
+    price: str | None = None
+    created_at: str | None = None
+    attributes: list[str] | None = None
+    description: str | None = None
+    product_id: str | None = None
 
-
-class ProductBase(BaseModel):
-    url: str
-    title: str
-    picture: str | None
-    price: float
-    attributes: str | None
-    description: str | None
-    locations: str | None
-    product_id: str
-    viewed: int
-    seller: SellerBase
+    model_config = ConfigDict(from_attributes=True)

@@ -6,6 +6,8 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+from shutil import which
+
 
 BOT_NAME = 'olx_parser'
 
@@ -63,7 +65,7 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 # ITEM_PIPELINES = {
-#    "olx_parser.pipelines.OlxParserPipeline": 300,
+#     'olx_parser.pipelines.OlxPipeline': 1,
 # }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

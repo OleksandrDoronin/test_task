@@ -1,5 +1,6 @@
 import scrapy
 
+from core.logger import logger
 from core.repositories.postgres_base import init_db
 from core.repositories.products import get_olx_data_repository
 from core.schemas.products import OlxDataBase
@@ -17,19 +18,26 @@ class OlxSpider(scrapy.Spider):
         self.olx_data_repository = get_olx_data_repository()
 
     def parse(self, response):  # noqa
-        links = response.xpath('//a[contains(@class, "css-qo0cxu")]/@href').getall()
+        try:
+            logger.info(f'Starting to parse page: {response.url}')
+            links = response.xpath('//a[contains(@class, "css-qo0cxu")]/@href').getall()
 
-        for link in links:
-            absolute_url = response.urljoin(link)
-            yield response.follow(
-                absolute_url,
-                callback=self.parse_product_details,
-                meta={'product_url': absolute_url},
-            )
+            for link in links:
+                absolute_url = response.urljoin(link)
+                logger.debug(f'Processing link: {absolute_url}')
+                yield response.follow(
+                    absolute_url,
+                    callback=self.parse_product_details,
+                    meta={'product_url': absolute_url},
+                )
 
-        if self.page < 5:
-            next_page = self.get_next_page_url()
-            yield response.follow(next_page, callback=self.parse)
+            if self.page < 5:
+                next_page = self.get_next_page_url()
+                logger.info(f'Navigating to the next page: {next_page}')
+                yield response.follow(next_page, callback=self.parse)
+
+        except Exception as e:
+            logger.error(f"Error in the 'parse' method: {e}", exc_info=True)
 
     def get_next_page_url(self):
         """Returns the URL of the next page."""
@@ -38,15 +46,19 @@ class OlxSpider(scrapy.Spider):
         return f'https://www.olx.ua/uk/list/?page={self.page}'
 
     def parse_product_details(self, response):
-        """Retrieves data from the ad page."""
+        try:
+            logger.info(f'Parsing product details for URL: {response.meta["product_url"]}')
+            product_data = self.extract_product_data(response=response)
 
-        product_data = self.extract_product_data(response=response)
+            olx_data = self.create_olx_data(product_data=product_data)
 
-        olx_data = self.create_olx_data(product_data=product_data)
+            self.olx_data_repository.add_product(product_data=olx_data)
 
-        self.olx_data_repository.add_product(product_data=olx_data)
+            logger.info(f"Product '{product_data['title']}' successfully saved to the database")
+            yield product_data
 
-        yield product_data
+        except Exception as e:
+            logger.error(f"Error in the 'parse_product_details' method: {e}", exc_info=True)
 
     def extract_product_data(self, response):
         """Extracts data from the HTML page of the ad."""

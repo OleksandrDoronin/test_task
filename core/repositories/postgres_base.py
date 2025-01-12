@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from core.settings import settings
 
 SQLite_test = 'sqlite:///./vacancies.db'
 

@@ -1,6 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from core.logger import logger
 from core.models import OlxData
 from core.repositories.postgres_base import get_db_session
 from core.schemas.products import OlxDataBase
@@ -28,6 +29,9 @@ class OlxDataRepository:
                 self.session.commit()
             except SQLAlchemyError as e:
                 self.session.rollback()
+                logger.error(
+                    f'Error saving product {product_data.product_id}: {str(e)}', exc_info=True
+                )
                 raise ValueError(f'Error saving product: {str(e)}')
 
     def add_product(self, product_data: OlxDataBase) -> None:
